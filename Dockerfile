@@ -1,21 +1,19 @@
-# Use an official Python runtime as a parent image
-FROM python:3.9-slim-buster
+# Use the official Nginx image as the base image
+FROM nginx:latest
 
-# Set the working directory in the container
-WORKDIR /app
+# Remove the default Nginx configuration file
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the current directory contents into the container at /app
-COPY . /app
+# Copy your custom Nginx configuration file into the container
+# This assumes you have a file named 'nginx.conf' in the same directory as your Dockerfile
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy your static website content into the Nginx web root directory
+# This assumes you have a directory named 'html' containing your website files
+COPY html /usr/share/nginx/html
 
-# Make port 8000 available to the world outside this container
-EXPOSE 8000
+# Expose port 80, which is the default HTTP port Nginx listens on
+EXPOSE 80
 
-# Define environment variable
-ENV NAME World
-
-# Run app.py when the container launches
-CMD ["python", "app.py"]
-
+# Start Nginx when the container launches
+CMD ["nginx", "-g", "daemon off;"]
