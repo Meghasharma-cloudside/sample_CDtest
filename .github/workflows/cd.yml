@@ -41,7 +41,7 @@ jobs:
       - name: Render new ECS task definition
         id: taskdef
         run: |
-          sed "s|<IMAGE>|${IMAGE_URI}|g" ecs-taskdef-template.json > ecs-taskdef.json
+          sed "s|<IMAGE>|${IMAGE_URI}|g" td.json > ecs-taskdef.json
 
       # Register ECS Task Definition
       - name: Register ECS Task Definition
