@@ -58,8 +58,8 @@ jobs:
                         --query 'taskDefinition.revision' --output text)
 
           aws ecs update-service \
-            --cluster my-ecs-cluster \
-            --service my-ecs-service \
+            --cluster test-cluster \
+            --service test-ecs-service \
             --task-definition ${FAMILY}:${REVISION}
 
 
