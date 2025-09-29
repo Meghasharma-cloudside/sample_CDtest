@@ -48,7 +48,7 @@ jobs:
         id: register-task-def
         run: |
           aws ecs register-task-definition \
-            --cli-input-json file://ecs-taskdef.json
+            --cli-input-json file://td.json
 
       # Update ECS Service
       - name: Update ECS Service
