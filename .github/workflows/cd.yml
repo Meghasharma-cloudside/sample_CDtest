@@ -1,0 +1,63 @@
+name: CD - Build & Deploy to ECS
+
+on:
+  push:
+    branches:
+      - main   # deploy only from main branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # required for OIDC
+      contents: read
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # Configure AWS credentials (OIDC, no secrets needed if IAM role is set up properly)
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::<ACCOUNT_ID>:role/<GITHUB_OIDC_ROLE>
+          aws-region: us-east-1
+
+      # Log in to ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Build, tag, and push image
+      - name: Build and Push Docker Image
+        run: |
+          COMMIT_ID=$(git rev-parse --short HEAD)
+          IMAGE_URI=${{ steps.login-ecr.outputs.registry }}/my-app:$COMMIT_ID
+          docker build -t $IMAGE_URI .
+          docker push $IMAGE_URI
+          echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+      # Register new ECS Task Definition
+      - name: Render new ECS task definition
+        id: taskdef
+        run: |
+          # Substitute the new image into the task definition template
+          sed "s|<IMAGE>|${IMAGE_URI}|g" ecs-taskdef-template.json > ecs-taskdef.json
+
+      - name: Register ECS Task Definition
+        id: register-task-def
+        run: |
+          aws ecs register-task-definition \
+            --cli-input-json file://ecs-taskdef.json
+
+      # Update ECS Service with new Task Definition
+      - name: Update ECS Service
+        run: |
+          FAMILY=$(jq -r '.family' ecs-taskdef.json)
+          REVISION=$(aws ecs describe-task-definition --task-definition $FAMILY \
+                        --query 'taskDefinition.revision' --output text)
+
+          aws ecs update-service \
+            --cluster my-ecs-cluster \
+            --service my-ecs-service \
+            --task-definition ${FAMILY}:${REVISION}
