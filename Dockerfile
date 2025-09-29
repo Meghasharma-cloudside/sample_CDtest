@@ -10,7 +10,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copy your static website content into the Nginx web root directory
 # This assumes you have a directory named 'html' containing your website files
-COPY html /usr/share/nginx/html
+COPY . /usr/share/nginx/html
 
 # Expose port 80, which is the default HTTP port Nginx listens on
 EXPOSE 80
